@@ -159,7 +159,7 @@ class RMSprop(Optimizer):
             # code here
             # self.accumulators[k] = None
             # new_w[k] = None
-            self.accumulators[k] = self.beta * self,accumulators[k] + (1 - self.beta) * w_grads[k]
+            self.accumulators[k] = self.beta * self.accumulators[k] + (1 - self.beta) * w_grads[k]
             new_w[k] = w[k] - self.lr * w_grads[k] / (np.sqrt(self.accumulators[k] + self.epsilon))
             #####################################################################################
         return new_w
