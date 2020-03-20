@@ -164,8 +164,6 @@ class conv(operator):
         """
         super(conv, self).__init__()
         self.conv_params = conv_params
-        self.matmul = matmul()
-        self.add_bias = add_bias()
 
     def forward(self, input, weights, bias):
         """
@@ -190,7 +188,7 @@ class conv(operator):
         
         out_height = 1 + (in_height - kernel_h + pad) // stride
         out_width = 1 + (in_width - kernel_w + pad) // stride
-
+        print(out_width,out_height)
         pad_scheme = (pad//2, pad - pad//2)
         input_pad = np.pad(input, pad_width=((0,0), (0,0), pad_scheme, pad_scheme),
                            mode='constant', constant_values=0)
@@ -200,26 +198,21 @@ class conv(operator):
 
         input_conv = img2col(input_pad, recep_fields_h,
                              recep_fields_w, kernel_h, kernel_w)
-        input_conv = input_pool.reshape(
-            batch, in_channel, -1, out_height, out_width)
+        input_conv = input_conv.reshape(
+            batch, in_channel * kernel_h * kernel_w, out_height * out_width)
 
-        weights_conv = weights.reshape(out_channel, -1) #C_o x C_i K_h K_w
+        print("input_conv.shape = ",input_conv.shape)
+        print("weights.shape = ", weights.shape)
 
-        out_conv = self.matmul.forward(input_conv, weights_conv)
-        out_conv = self.add_bias.forward(out_conv, bias)
-        
-        out_conv = out_conv.reshape(
-            batch, in_channel, -1, out_height*out_width)
+        weights_conv = np.repeat(weights.reshape(1,out_channel,in_channel*kernel_h*kernel_w),batch, axis=0)
+        print("weights_conv.shape = ", weights_conv.shape)
 
-        out_pad = np.zeros(input_pad.shape)
-        idx = 0
-        for i in recep_fields_h:
-            for j in recep_fields_w:
-                out_pad[:, :, i:i+kernel_h, j:j+kernel_h] += \
-                    out_conv[:, :, :, idx].reshape(
-                        batch, out_channel, kernel_h, kernel_h)
-                idx += 1
-        output = out_pad[:, :, pad:pad+out_height, pad:pad+out_width]
+        out_conv = np.matmul(weights_conv, input_conv)
+
+        print("out_conv.shape = ",out_conv.shape)
+        out_conv += bias.reshape(out_channel, -1)
+        print("out_conv.shape = ",out_conv.shape)
+        output = out_conv.reshape(batch, out_channel, out_height, out_width)
 
         #####################################################################################
         return output
@@ -263,15 +256,22 @@ class conv(operator):
 
         input_conv = img2col(input_pad, recep_fields_h,
                              recep_fields_w, kernel_h, kernel_w)
-        input_conv = input_pool.reshape(
+        input_conv = input_conv.reshape(
             batch, in_channel, -1, out_height, out_width)
 
         out_grad, b_grad = self.add_bias.backward(out_grad, input_conv, bias)
+        print("out_grad.shape = ",out_grad.shape)
+        print("b_grad.shape = ",b_grad.shape)
+        print("weights.shape = ", weights.shape)
+        print("input_conv.shape = ",input_conv.shape)
 
-        weights_conv = weights.reshape(out_channel, -1)
-        out_grad_reshaped = out_grad.transpose(1, 2, 3, 0).reshape(out_channel, -1)
-        in_grad, w_grad = self.matmul.backward(out_grad_reshaped, input_conv, weights_conv)
-        
+        weights_conv = weights[out_channel, :,:,:]
+        print("weights_conv.shape = ", weights_conv.shape)
+        #out_grad_reshaped = out_grad.transpose(1, 2, 3, 0).reshape(out_channel, -1)
+        in_grad, w_grad = self.matmul.backward(out_grad, input_conv, weights_conv)
+        print("in_grad.shape = ",in_grad.shape)
+        print("w_grad.shape = ",w_grad.shape)
+
         w_grad = w_grad.reshape(weights.shape)
 
         in_grad = in_grad.reshape(
@@ -324,8 +324,8 @@ class pool(operator):
         # code here
         # output = None
 
-        out_height = 1 + (in_height - kernel_h + pad) // stride
-        out_width = 1 + (in_width - kernel_w + pad) // stride
+        out_height = 1 + (in_height - pool_height + pad) // stride
+        out_width = 1 + (in_width - pool_width + pad) // stride
 
         pad_scheme = (pad//2, pad - pad//2)
         input_pad = np.pad(input, pad_width=((0,0), (0,0), pad_scheme, pad_scheme),
@@ -335,23 +335,26 @@ class pool(operator):
         recep_fields_w = [stride*i for i in range(out_width)]
 
         input_pool = img2col(input_pad, recep_fields_h,
-                             recep_fields_w,  pool_height, pool_width)
+                            recep_fields_w, pool_height, pool_width)
         input_pool = input_pool.reshape(
             batch, in_channel, -1, out_height, out_width)
+        print(input_pool.shape)
+
 
         if pool_type == 'max':
             out_pool = (input_pool == np.max(input_pool, axis=2, keepdims=True)) * \
-                input_pool[:, :, np.newaxis, :, :]
+                        input_pool
 
         elif pool_type == 'avg':
             scale = 1 / (pool_height*pool_width)
             out_pool = scale * \
-                np.repeat(input_pool[:, :, np.newaxis, :, :],
-                          pool_height*pool_width, axis=2)
+                np.repeat(input_pool,
+                    pool_height*pool_width, axis=2)
 
         out_pool = out_pool.reshape(
             batch, in_channel, -1, out_height*out_width)
 
+        print(out_pool)
         out_pad = np.zeros(input_pad.shape)
         idx = 0
         for i in recep_fields_h:
@@ -360,7 +363,11 @@ class pool(operator):
                     out_pool[:, :, :, idx].reshape(
                         batch, in_channel, pool_height, pool_width)
                 idx += 1
+
+        
         output = out_pad[:, :, pad:pad+out_height, pad:pad+out_width]
+        #print(output)
+        print(output.shape)
 
         #####################################################################################
         return output
