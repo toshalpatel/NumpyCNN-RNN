@@ -188,7 +188,6 @@ class conv(operator):
         
         out_height = 1 + (in_height - kernel_h + pad) // stride
         out_width = 1 + (in_width - kernel_w + pad) // stride
-        print(out_width,out_height)
         pad_scheme = (pad//2, pad - pad//2)
         input_pad = np.pad(input, pad_width=((0,0), (0,0), pad_scheme, pad_scheme),
                            mode='constant', constant_values=0)
@@ -201,17 +200,10 @@ class conv(operator):
         input_conv = input_conv.reshape(
             batch, in_channel * kernel_h * kernel_w, out_height * out_width)
 
-        print("input_conv.shape = ",input_conv.shape)
-        print("weights.shape = ", weights.shape)
-
         weights_conv = np.repeat(weights.reshape(1,out_channel,in_channel*kernel_h*kernel_w),batch, axis=0)
-        print("weights_conv.shape = ", weights_conv.shape)
 
         out_conv = np.matmul(weights_conv, input_conv)
-
-        print("out_conv.shape = ",out_conv.shape)
         out_conv += bias.reshape(out_channel, -1)
-        print("out_conv.shape = ",out_conv.shape)
         output = out_conv.reshape(batch, out_channel, out_height, out_width)
 
         #####################################################################################
@@ -259,21 +251,20 @@ class conv(operator):
         input_conv = input_conv.reshape(
             batch, in_channel, -1, out_height, out_width)
 
-        out_grad, b_grad = self.add_bias.backward(out_grad, input_conv, bias)
-        print("out_grad.shape = ",out_grad.shape)
-        print("b_grad.shape = ",b_grad.shape)
-        print("weights.shape = ", weights.shape)
-        print("input_conv.shape = ",input_conv.shape)
+        #out_grad, b_grad = self.add_bias.backward(out_grad, input_conv, bias)
+        b_grad = np.sum(out_grad, axis=(0,2,3))
 
-        weights_conv = weights[out_channel, :,:,:]
-        print("weights_conv.shape = ", weights_conv.shape)
-        #out_grad_reshaped = out_grad.transpose(1, 2, 3, 0).reshape(out_channel, -1)
-        in_grad, w_grad = self.matmul.backward(out_grad, input_conv, weights_conv)
-        print("in_grad.shape = ",in_grad.shape)
-        print("w_grad.shape = ",w_grad.shape)
+        weights_conv = np.repeat(weights.reshape(
+                                1,out_channel,in_channel*kernel_h*kernel_w),batch, axis=0)
+        input_conv = input_conv.reshape(
+                        batch, in_channel * kernel_h * kernel_w, out_height * out_width)
+        out_grad = out_grad.reshape(batch, out_channel, -1)
 
-        w_grad = w_grad.reshape(weights.shape)
+        w_grad = np.matmul(out_grad,input_conv.transpose(0,2,1))
+        w_grad = w_grad.reshape(batch,out_channel,in_channel,kernel_h,kernel_w)
+        w_grad = np.sum(w_grad, axis=0)
 
+        in_grad = np.matmul(weights_conv.transpose(0,2,1), out_grad)
         in_grad = in_grad.reshape(
             batch, in_channel, -1, out_height*out_width)
 
@@ -283,9 +274,9 @@ class conv(operator):
             for j in recep_fields_w:
                 input_pad_grad[:, :, i:i+kernel_h, j:j+kernel_w] += \
                     in_grad[:, :, :, idx].reshape(
-                        batch, in_channel, in_height, in_width)
+                        batch, in_channel, kernel_h, kernel_w)
                 idx += 1
-        in_grad = in_grad[:, :, pad:pad+in_height, pad:pad+in_width]
+        in_grad = input_pad_grad[:, :, pad:pad+in_height, pad:pad+in_width]
 
         #################################################################################
         return in_grad, w_grad, b_grad
@@ -340,35 +331,19 @@ class pool(operator):
             batch, in_channel, -1, out_height, out_width)
         print(input_pool.shape)
 
-
         if pool_type == 'max':
-            out_pool = (input_pool == np.max(input_pool, axis=2, keepdims=True)) * \
-                        input_pool
-
+            out_pool = np.max(input_pool, axis=2, keepdims=True)
+            
         elif pool_type == 'avg':
-            scale = 1 / (pool_height*pool_width)
-            out_pool = scale * \
-                np.repeat(input_pool,
-                    pool_height*pool_width, axis=2)
+            out_pool = np.mean(input_pool, axis=2, keepdims=True)
+            # scale = 1 / (pool_height*pool_width)
+            # out_pool = scale * input_pool
+            # out_pool = np.sum(out_pool, axis=2, keepdims=True)
 
-        out_pool = out_pool.reshape(
-            batch, in_channel, -1, out_height*out_width)
-
-        print(out_pool)
-        out_pad = np.zeros(input_pad.shape)
-        idx = 0
-        for i in recep_fields_h:
-            for j in recep_fields_w:
-                out_pad[:, :, i:i+pool_height, j:j+pool_width] += \
-                    out_pool[:, :, :, idx].reshape(
-                        batch, in_channel, pool_height, pool_width)
-                idx += 1
-
+        print("out_pool.shape",out_pool.shape)
         
-        output = out_pad[:, :, pad:pad+out_height, pad:pad+out_width]
-        #print(output)
-        print(output.shape)
-
+        output = out_pool.reshape(batch, in_channel, out_height, out_width)
+        print(output)
         #####################################################################################
         return output
 
@@ -458,7 +433,11 @@ class dropout(operator):
             self.mask = (p >= self.rate).astype('int')
             #####################################################################################
             # code here
-            output = None
+            # output = None
+
+            input_drop = self.mask * input
+            output = scale * input_drop
+
             #####################################################################################
         else:
             output = input
@@ -477,7 +456,11 @@ class dropout(operator):
         if self.training:
             #####################################################################################
             # code here
-            in_grad = None
+            # in_grad = None 
+
+            out_grad = 1/(1-self.rate) * out_grad
+            in_grad = out_grad * self.mask
+
             #####################################################################################
         else:
             in_grad = out_grad
@@ -560,12 +543,35 @@ class gru(operator):
 
         #####################################################################################
         # code here
+
         # reset gate
-        x_r = None
+        # x_in = x.dot(kernel_r)
+        # x_r_in = np.concatenate([prev_h,x_in])
+        # print("x_r_in: ",x_r_in.shape)
+        # print("w_r: ",recurrent_kernel_r.shape)
+        # x_r = sigmoid(np.matmul(x_r_in,recurrent_kernel_r.T))
+        # print(x_r.shape)
+        x_in = x.dot(kernel_r)
+        x_r = sigmoid(x_in + prev_h.dot(recurrent_kernel_r))
+
         # update gate
-        x_z = None
+        # x_in = x.dot(kernel_z)
+        # x_z_in = np.concatenate([prev_h,x_in])
+        # print("x_z_in: ",x_z_in.shape)
+        # print("w_z: ",recurrent_kernel_z.shape)
+        # x_z = sigmoid(np.matmul(x_z_in,recurrent_kernel_z.T))
+        # print(x_z.shape)
+        x_in = x.dot(kernel_z)
+        x_z = sigmoid(x_in + prev_h.dot(recurrent_kernel_z))
+
         # new gate
-        x_h = None
+        x_in = x.dot(kernel_h)
+        prev_h_in = prev_h * x_r
+        # x_z_in = np.concatenate([prev_h_in,x_in], axis=0)
+        # print("x_h_in: ",x_h_in.shape)
+        # print("w_h: ",recurrent_kernel_h.shape)
+        # x_h = np.tanh(np.matmul(x_h_in,recurrent_kernel_h.T))
+        x_h = np.tanh(x_in + prev_h_in.dot(recurrent_kernel_h))
         #####################################################################################
 
         output = (1 - x_z) * x_h + x_z * prev_h
