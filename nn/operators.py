@@ -343,7 +343,7 @@ class pool(operator):
         print("out_pool.shape",out_pool.shape)
         
         output = out_pool.reshape(batch, in_channel, out_height, out_width)
-        print(output)
+        print(output.shape)
         #####################################################################################
         return output
 
@@ -544,34 +544,29 @@ class gru(operator):
         #####################################################################################
         # code here
 
-        # reset gate
+        # # reset gate
         # x_in = x.dot(kernel_r)
-        # x_r_in = np.concatenate([prev_h,x_in])
-        # print("x_r_in: ",x_r_in.shape)
-        # print("w_r: ",recurrent_kernel_r.shape)
-        # x_r = sigmoid(np.matmul(x_r_in,recurrent_kernel_r.T))
-        # print(x_r.shape)
-        x_in = x.dot(kernel_r)
-        x_r = sigmoid(x_in + prev_h.dot(recurrent_kernel_r))
+        # x_r = sigmoid(x_in + prev_h.dot(recurrent_kernel_r))
+
+        # # update gate
+        # x_in = x.dot(kernel_z)
+        # x_z = sigmoid(x_in + prev_h.dot(recurrent_kernel_z))
+
+        # # new gate
+        # x_in = x.dot(kernel_h)
+        # prev_h_in = prev_h * x_r
+        # x_h = np.tanh(x_in + prev_h_in.dot(recurrent_kernel_h))
+
+        # reset gate
+        x_r = sigmoid(x.dot(kernel_r) + prev_h.dot(recurrent_kernel_r))
 
         # update gate
-        # x_in = x.dot(kernel_z)
-        # x_z_in = np.concatenate([prev_h,x_in])
-        # print("x_z_in: ",x_z_in.shape)
-        # print("w_z: ",recurrent_kernel_z.shape)
-        # x_z = sigmoid(np.matmul(x_z_in,recurrent_kernel_z.T))
-        # print(x_z.shape)
-        x_in = x.dot(kernel_z)
-        x_z = sigmoid(x_in + prev_h.dot(recurrent_kernel_z))
+        x_z = sigmoid(x.dot(kernel_z) + prev_h.dot(recurrent_kernel_z))
 
         # new gate
-        x_in = x.dot(kernel_h)
         prev_h_in = prev_h * x_r
-        # x_z_in = np.concatenate([prev_h_in,x_in], axis=0)
-        # print("x_h_in: ",x_h_in.shape)
-        # print("w_h: ",recurrent_kernel_h.shape)
-        # x_h = np.tanh(np.matmul(x_h_in,recurrent_kernel_h.T))
-        x_h = np.tanh(x_in + prev_h_in.dot(recurrent_kernel_h))
+        x_h = np.tanh(x.dot(kernel_h) + prev_h_in.dot(recurrent_kernel_h))
+
         #####################################################################################
 
         output = (1 - x_z) * x_h + x_z * prev_h
@@ -599,22 +594,47 @@ class gru(operator):
 
         #####################################################################################
         # code here
-        x_grad = None
-        prev_h_grad = None
+        x_z = sigmoid(prev_h.dot(recurrent_kernel_z) + x.dot(kernel_z))
+        x_r = sigmoid(prev_h.dot(recurrent_kernel_r) + x.dot(kernel_r))
+        prev_h_in = x_r * prev_h
+        x_h = np.tanh(prev_h_in.dot(recurrent_kernel_h) + x.dot(kernel_h) )
 
-        kernel_r_grad = None
-        kernel_z_grad = None
-        kernel_h_grad = None
+        d1 = x_z * out_grad
+        d2 = prev_h * out_grad
+        d3 = x_h * out_grad
+        d4 = -1 * d3
+        d5 = d2 + d4
+        d6 = (1 - x_z) * out_grad
+        d7 = d5 * (x_z * (1 - x_z))
+        d8 = d6 * (1 - np.square(x_h))
+        d9 = d8.dot(kernel_h.T)
+        d10 = d8.dot(recurrent_kernel_h.T)
+        d11 = d7.dot(kernel_z.T)
+        d12 = d7.dot(recurrent_kernel_z.T)
+        d14 = d10 * x_r
+        d15 = d10 * prev_h
 
-        recurrent_kernel_r_grad = None
-        recurrent_kernel_z_grad = None
-        recurrent_kernel_h_grad = None
+        d16 = d15 * (x_r * (1 - x_r))
+        d13 = d16.dot(kernel_r.T)
+        d17 = d16.dot(recurrent_kernel_r.T)
+        
+        x_grad = d9 + d11 + d13
+
+        prev_h_grad = d12 + d14 + d1 + d17
+
+        kernel_r_grad = np.dot(x.T, d16)
+        kernel_z_grad = np.dot(x.T, d7)
+        kernel_h_grad = np.dot(x.T, d8)
+
+        recurrent_kernel_r_grad = np.dot(prev_h.T,d16)
+        recurrent_kernel_z_grad = np.dot(prev_h.T,d7)
+        recurrent_kernel_h_grad = np.dot((prev_h * x_r).T, d8)
         #####################################################################################
 
         in_grad = [x_grad, prev_h_grad]
         kernel_grad = np.concatenate([kernel_z_grad, kernel_r_grad, kernel_h_grad], axis=-1)
         r_kernel_grad = np.concatenate([recurrent_kernel_z_grad, recurrent_kernel_r_grad, recurrent_kernel_h_grad], axis=-1)
-
+        print(kernel_grad.shape,r_kernel_grad.shape)
         return in_grad, kernel_grad, r_kernel_grad
 
 

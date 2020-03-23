@@ -1,10 +1,13 @@
+import os
+
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import numpy as np
 import keras
 from keras import layers
 from nn.layers import GRUCell
 from utils.tools import rel_error
 
-N, D, H = 3, 10, 4
+N, D, H = 5, 10, 4
 x = np.random.uniform(size=(N, D))
 prev_h = np.random.uniform(size=(N, H))
 
