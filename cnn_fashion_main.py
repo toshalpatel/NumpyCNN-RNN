@@ -9,19 +9,19 @@ np.random.seed(5242)
 
 Fashion_mnist = Fashion_MNIST()
 Fashion_mnist.load()
-idx = np.random.randint(Fashion_mnist.num_train, size=4)
-print('\nFour examples of training images:')
-img = Fashion_mnist.x_train[idx][:,0,:,:]
+# idx = np.random.randint(Fashion_mnist.num_train, size=4)
+# print('\nFour examples of training images:')
+# img = Fashion_mnist.x_train[idx][:,0,:,:]
 
-plt.figure(1, figsize=(18, 18))
-plt.subplot(1, 4, 1)
-plt.imshow(img[0],cmap = 'gray')
-plt.subplot(1, 4, 2)
-plt.imshow(img[1],cmap = 'gray')
-plt.subplot(1, 4, 3)
-plt.imshow(img[2],cmap = 'gray')
-plt.subplot(1, 4, 4)
-plt.imshow(img[3],cmap = 'gray')
+# plt.figure(1, figsize=(18, 18))
+# plt.subplot(1, 4, 1)
+# plt.imshow(img[0],cmap = 'gray')
+# plt.subplot(1, 4, 2)
+# plt.imshow(img[1],cmap = 'gray')
+# plt.subplot(1, 4, 3)
+# plt.imshow(img[2],cmap = 'gray')
+# plt.subplot(1, 4, 4)
+# plt.imshow(img[3],cmap = 'gray')
 
 from nn.optimizers import RMSprop, Adam
 
