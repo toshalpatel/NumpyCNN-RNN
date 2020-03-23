@@ -329,21 +329,15 @@ class pool(operator):
                             recep_fields_w, pool_height, pool_width)
         input_pool = input_pool.reshape(
             batch, in_channel, -1, out_height, out_width)
-        print(input_pool.shape)
 
         if pool_type == 'max':
             out_pool = np.max(input_pool, axis=2, keepdims=True)
             
         elif pool_type == 'avg':
             out_pool = np.mean(input_pool, axis=2, keepdims=True)
-            # scale = 1 / (pool_height*pool_width)
-            # out_pool = scale * input_pool
-            # out_pool = np.sum(out_pool, axis=2, keepdims=True)
-
-        print("out_pool.shape",out_pool.shape)
         
         output = out_pool.reshape(batch, in_channel, out_height, out_width)
-        print(output.shape)
+
         #####################################################################################
         return output
 
@@ -634,7 +628,7 @@ class gru(operator):
         in_grad = [x_grad, prev_h_grad]
         kernel_grad = np.concatenate([kernel_z_grad, kernel_r_grad, kernel_h_grad], axis=-1)
         r_kernel_grad = np.concatenate([recurrent_kernel_z_grad, recurrent_kernel_r_grad, recurrent_kernel_h_grad], axis=-1)
-        print(kernel_grad.shape,r_kernel_grad.shape)
+        
         return in_grad, kernel_grad, r_kernel_grad
 
 
