@@ -38,12 +38,12 @@ def Fashion_MNISTNet():
                           initializer=Gaussian(std=0.001)))
     model.add(ReLU(name='relu1'))
     model.add(Pool2D(pool1_params, name='pooling1'))
-    model.add(Dropout(ratio=0.25, name='dropout1'))
+    model.add(Dropout(rate=0.25, name='dropout1'))
     model.add(Conv2D(conv2_params, name='conv2',
                           initializer=Gaussian(std=0.001)))
     model.add(ReLU(name='relu2'))
     model.add(Pool2D(pool2_params, name='pooling2'))
-    model.add(Dropout(ratio=0.25, name='dropout2'))
+    model.add(Dropout(rate=0.25, name='dropout2'))
     model.add(Flatten(name='flatten'))
     model.add(Linear(400, 256, name='fclayer1',
                       initializer=Gaussian(std=0.01)))
