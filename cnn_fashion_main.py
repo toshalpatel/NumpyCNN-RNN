@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.Fas_MNISTNet import Fashion_MNISTNet
+from models.MyFashionModel_CNN import MyFashionModel_CNN
 from nn.loss import SoftmaxCrossEntropy, L2
 from nn.optimizers import Adam
 from data.datasets import Fashion_MNIST
@@ -25,7 +26,8 @@ Fashion_mnist.load()
 
 from nn.optimizers import RMSprop, Adam
 
-model = Fashion_MNISTNet()
+#model = Fashion_MNISTNet()
+model = MyFashionModel_CNN()
 loss = SoftmaxCrossEntropy(num_class=10)
 
 # define your learning rate sheduler
@@ -43,7 +45,7 @@ import time
 start = time.time()
 train_results, val_results, test_results = model.train(
     Fashion_mnist, 
-    train_batch=50, val_batch=1000, test_batch=1000, 
-    epochs=2, 
+    train_batch=256, val_batch=1000, test_batch=1000, 
+    epochs=10, 
     val_intervals=-1, test_intervals=900, print_intervals=100)
 print('cost:', time.time()-start)
