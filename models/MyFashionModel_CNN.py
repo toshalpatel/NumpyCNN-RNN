@@ -2,7 +2,7 @@ from nn.layers import *
 from nn.model import Model
 
 
-def Fashion_MNISTNet():
+def MyFashionModel_CNN():
     conv1_params = {
         'kernel_h': 3,
         'kernel_w': 3,
