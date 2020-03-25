@@ -37,7 +37,7 @@ start = time.time()
 train_results, val_results, test_results = model.train(
     Fashion_mnist, 
     train_batch=50, val_batch=1000, test_batch=1000, 
-    epochs=5, 
+    epochs=10, 
     val_intervals=-1, test_intervals=900, print_intervals=100)
 print('cost:', time.time()-start)
 

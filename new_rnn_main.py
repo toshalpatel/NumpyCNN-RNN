@@ -17,6 +17,6 @@ model.compile(optimizer=adam, loss=loss, regularization=L2(w=0.001))
 train_results, val_results, test_results = model.train(
         dataset, 
         train_batch=20, val_batch=100, test_batch=100, 
-        epochs=25, 
+        epochs=22, 
         val_intervals=-1, test_intervals=25, print_intervals=5)
 
