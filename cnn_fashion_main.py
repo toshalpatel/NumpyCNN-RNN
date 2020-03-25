@@ -10,6 +10,7 @@ np.random.seed(5242)
 
 Fashion_mnist = Fashion_MNIST()
 Fashion_mnist.load()
+
 # idx = np.random.randint(Fashion_mnist.num_train, size=4)
 # print('\nFour examples of training images:')
 # img = Fashion_mnist.x_train[idx][:,0,:,:]
@@ -37,7 +38,7 @@ def func(lr, iteration):
     else:
         return lr
 
-adam = Adam(lr=0.001, decay=0,  sheduler_func=None, bias_correction=True)
+adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999 sheduler_func=None, bias_correction=True)
 l2 = L2(w=0.001) # L2 regularization with lambda=0.001
 model.compile(optimizer=adam, loss=loss, regularization=l2)
 
@@ -45,7 +46,7 @@ import time
 start = time.time()
 train_results, val_results, test_results = model.train(
     Fashion_mnist, 
-    train_batch=256, val_batch=1000, test_batch=1000, 
-    epochs=10, 
+    train_batch=128, val_batch=1000, test_batch=1000, 
+    epochs=40, 
     val_intervals=-1, test_intervals=900, print_intervals=100)
 print('cost:', time.time()-start)
