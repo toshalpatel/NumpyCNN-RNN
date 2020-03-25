@@ -38,7 +38,7 @@ def func(lr, iteration):
     else:
         return lr
 
-adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999 sheduler_func=None, bias_correction=True)
+adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, sheduler_func=None, bias_correction=True)
 l2 = L2(w=0.001) # L2 regularization with lambda=0.001
 model.compile(optimizer=adam, loss=loss, regularization=l2)
 

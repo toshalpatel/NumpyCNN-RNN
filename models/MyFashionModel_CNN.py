@@ -14,7 +14,7 @@ def MyFashionModel_CNN():
     conv2_params = {
         'kernel_h': 3,
         'kernel_w': 3,
-        'pad': , #same
+        'pad': 2, #same
         'stride': 1,
         'in_channel': 32,
         'out_channel': 32
@@ -39,7 +39,7 @@ def MyFashionModel_CNN():
         'pool_type': 'max',
         'pool_height': 2,
         'pool_width': 2,
-        'stride': 1,
+        'stride': 2,
         'pad': 0
     }
 
@@ -61,12 +61,12 @@ def MyFashionModel_CNN():
     model.add(Pool2D(pool1_params, name='pooling1'))
     model.add(Dropout(rate=0.25, name='dropout3'))
 
-    model.add(Conv2D(conv4_params, name='conv4', ,initializer=Gaussian(std=0.001)))
+    model.add(Conv2D(conv4_params, name='conv4',initializer=Gaussian(std=0.001)))
     model.add(ReLU(name='relu4'))
     model.add(Dropout(rate=0.25, name='dropout4'))
 
     model.add(Flatten(name='flatten'))
-    model.add(Linear(128, 512, name='fclayer1', #512
+    model.add(Linear(25088, 512, name='fclayer1', #512
                       initializer=Gaussian(std=0.01)))
     model.add(ReLU(name='relu5'))
     model.add(Dropout(rate=0.5, name='dropout5'))
