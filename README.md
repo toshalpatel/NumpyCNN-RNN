@@ -1,5 +1,4 @@
-# cs5242
-CS5242 Assignments of NUS
+# Numpy implementation of basic layers used in CNNs and RNNs
 
 ## requirements
 ### python version
@@ -14,6 +13,8 @@ CS5242 Assignments of NUS
 - jupyter
 - pandas
 - nltk
+
+These libraries are for checking my numpy implementation with the libraries implementation
 
 ## introduction
 
