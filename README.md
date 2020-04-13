@@ -14,12 +14,10 @@
 - pandas
 - nltk
 
-These libraries are for checking my numpy implementation with the libraries implementation
+These libraries are for comparing my numpy implementation with the libraries implementation
 
 ## introduction
 
-In this assignemnt, the task is to implement some basic components for training convolutional neural network (CNN) over the Fashion_MNIST dataset and recurrent neural network (RNN) over the NLTK dataset. You need to follow the lecture notes to
-- implement the RMSProp algorithm in nn/optimizers.py
-- implement multiple operations in nn/operators.py, which are used by the layers (in nn/layer.py)
-- implement the forward function of Bi-directional RNN (in nn/layer.py)
-- tune the model architecture and some hyperparameters to improve the accuracy.
+This is an numpy implementation of some basic components for training convolutional neural network (CNN) over the Fashion_MNIST dataset and recurrent neural network (RNN) over the NLTK dataset.
+
+x_main.py files are to compare the implementation of basic functions in numpy with those of the keras/tf libraries.
